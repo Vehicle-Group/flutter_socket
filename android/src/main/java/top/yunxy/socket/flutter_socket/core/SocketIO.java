@@ -97,9 +97,16 @@ public class SocketIO {
     }
 
     private synchronized void call(String type, Object content) {
+        call(type, content, serialNo);
+    }
+
+    private synchronized void call(String type, Object content, int serialNo) {
         HashMap data = new HashMap<String, Object>();
         data.put("type", type);
         data.put("content", content);
+        data.put("code", code);
+        data.put("socketType", type);
+        data.put("serialNo", serialNo);
         handler.post(() -> {
             if (streamEvent != null) {
                 Gson gson = new Gson();
@@ -343,6 +350,7 @@ public class SocketIO {
     }
 
     private void dataHandleMessage(MsgHead msgHead, byte[] body, String hex) {
+        Gson gson = new Gson();
         switch (msgHead.getMsgId()) {
             case 0x8001:
                 final T8001 t8001 = new T8001(body);
@@ -366,34 +374,34 @@ public class SocketIO {
                 final T8003 t8003 = new T8003(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8003.toString(), hex);
                 resendMulti(t8003.getSerialNo(), t8003.getIds());
-                streamHandle(t8003, msgHead.getSerialNo());
+                call("event", gson.toJson(t8003), msgHead.getSerialNo());
                 break;
             case 0x8800:
                 final T8800 t8800 = new T8800(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8800.toString(), hex);
                 resendMedia(t8800.getId(), t8800.getIds());
-                streamHandle(t8800, msgHead.getSerialNo());
+                call("event", gson.toJson(t8800), msgHead.getSerialNo());
                 break;
             case 0x8801:
                 final T8801 t8801 = new T8801(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8801.toString(), hex);
-                streamHandle(t8801, msgHead.getSerialNo());
+                call("event", gson.toJson(t8801), msgHead.getSerialNo());
                 break;
             case 0x8803:
                 final T8803 t8803 = new T8803(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8803.toString(), hex);
-                streamHandle(t8803, msgHead.getSerialNo());
+                call("event", gson.toJson(t8803), msgHead.getSerialNo());
                 break;
             case 0x9101:
                 final T9101 t9101 = new T9101(body);
                 sendAnswer(msgHead);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t9101.toString(), hex);
-                streamHandle(t9101, msgHead.getSerialNo());
+                call("event", gson.toJson(t9101), msgHead.getSerialNo());
                 break;
             case 0x9102:
                 final T9102 t9102 = new T9102(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t9102.toString(), hex);
-                streamHandle(t9102, msgHead.getSerialNo());
+                call("event", gson.toJson(t9102), msgHead.getSerialNo());
                 break;
             default:
                 sendAnswer(msgHead);
@@ -405,16 +413,6 @@ public class SocketIO {
         final int serNo = nextSerialNo();
         byte[] data = DataTypeUtil.toWriteBytes(code, new T0001(msgHead.getSerialNo(), msgHead.getMsgId(), 0).toContent(), serNo);
         send(new Message(0x0001, data, serNo));
-    }
-
-    private void streamHandle(Object obj, int serialNo) {
-        Gson gson = new Gson();
-        String json = gson.toJson(obj);
-        Map<String, Object> map = gson.fromJson(json, Map.class);
-        map.put("code", code);
-        map.put("socketType", type);
-        map.put("serialNo", serialNo);
-        call("event", map);
     }
 
     private void debug(String... args) {
