@@ -411,9 +411,7 @@ public class SocketIO {
         map.put("code", code);
         map.put("socketType", type);
         map.put("serialNo", serialNo);
-        if (streamEvent != null) {
-            streamEvent.call(gson.toJson(map));
-        }
+        call("event", obj);
     }
 
     private void debug(String... args) {
