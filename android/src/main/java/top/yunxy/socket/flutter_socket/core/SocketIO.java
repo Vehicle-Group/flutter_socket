@@ -290,7 +290,7 @@ public class SocketIO {
                         }
                         try {
                             timeLock.lock(5000);
-                            if(!getConnectState()) {
+                            if (!getConnectState()) {
                                 continue;
                             }
                             putMessageRecord(message.getSerialNo());
@@ -441,6 +441,9 @@ public class SocketIO {
     }
 
     private void closeSocket() {
+        if (!getConnectState()) {
+            return;
+        }
         try {
             socket.close();
         } catch (IOException e) {
