@@ -283,6 +283,9 @@ public class SocketIO {
                         }
                         try {
                             timeLock.lock(5000);
+                            if(!getConnectState()) {
+                                continue;
+                            }
                             putMessageRecord(message.getSerialNo());
                             debug("<<<-", message.toString());
                             out.write(message.getData());
