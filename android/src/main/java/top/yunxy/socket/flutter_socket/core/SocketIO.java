@@ -100,9 +100,9 @@ public class SocketIO {
         call(type, content, serialNo);
     }
 
-    private synchronized void call(String type, Object content, int serialNo) {
+    private synchronized void call(String eventType, Object content, int serialNo) {
         HashMap data = new HashMap<String, Object>();
-        data.put("type", type);
+        data.put("type", eventType);
         data.put("content", content);
         data.put("code", code);
         data.put("socketType", type);
