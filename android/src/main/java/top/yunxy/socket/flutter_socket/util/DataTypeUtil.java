@@ -79,19 +79,13 @@ public class DataTypeUtil {
     }
 
     public static byte[] toBCD(String str) {
-        return toBCD(str, 6);
-    }
-
-    public static byte[] toBCD(String str, int digit) {
-        StringBuilder s = new StringBuilder("");
-        for (int i = 0; i < (digit * 8 - str.length() * 4); i++) {
-            s.append("0");
+        if (str == null || str.trim().equals("")) {
+            return new byte[]{};
         }
-        for (int i = 0; i < str.length(); i++) {
-            int n = Character.getNumericValue(str.charAt(i));
-            s.append(decToBCD(n));
+        if(str.length() % 2 == 1) {
+            return HexUtil.decode("0" + str);
         }
-        return toBYTES(s.toString());
+        return HexUtil.decode(str);
     }
 
     public static String toReverBCD(List<Byte> list) {
