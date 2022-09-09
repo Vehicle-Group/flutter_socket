@@ -414,7 +414,7 @@ public class SocketIO {
         map.put("code", code);
         map.put("socketType", type);
         map.put("serialNo", serialNo);
-        call("event", obj);
+        call("event", map);
     }
 
     private void debug(String... args) {
