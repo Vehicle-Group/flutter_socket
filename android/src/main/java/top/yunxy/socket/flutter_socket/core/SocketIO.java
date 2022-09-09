@@ -290,26 +290,31 @@ public class SocketIO {
                         }
                         try {
                             timeLock.lock(5000);
-                            if (!getConnectState()) {
+                            if(!getConnectState()) {
                                 continue;
                             }
-                            //重发
-                            if (existMessageRecord(message.getSerialNo())) {
-                                putMessageRecord(message.getSerialNo());
-                                debug("<<<-", message.toString());
-                                out.write(message.getData());
-                                out.flush();
-                                lastSendInterval = System.currentTimeMillis();
-                                continue;
-                            }
-                            SendMessage sendMessage = getLastMessageQueue(5);
-                            for (Message msg : sendMessage.getMessages()) {
-                                putMessageRecord(msg.getSerialNo());
-                                debug("<<<-", msg.toString());
-                            }
-                            out.write(sendMessage.getData());
+                            putMessageRecord(message.getSerialNo());
+                            debug("<<<-", message.toString());
+                            out.write(message.getData());
                             out.flush();
                             lastSendInterval = System.currentTimeMillis();
+//                            //重发
+//                            if (existMessageRecord(message.getSerialNo())) {
+//                                putMessageRecord(message.getSerialNo());
+//                                debug("<<<-", message.toString());
+//                                out.write(message.getData());
+//                                out.flush();
+//                                lastSendInterval = System.currentTimeMillis();
+//                                continue;
+//                            }
+//                            SendMessage sendMessage = getLastMessageQueue(5);
+//                            for (Message msg : sendMessage.getMessages()) {
+//                                putMessageRecord(msg.getSerialNo());
+//                                debug("<<<-", msg.toString());
+//                            }
+//                            out.write(sendMessage.getData());
+//                            out.flush();
+//                            lastSendInterval = System.currentTimeMillis();
                         } catch (InterruptedException e) {
                             debug("超时未响应");
                             errorHandle();
