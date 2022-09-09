@@ -22,7 +22,7 @@ public class T0F01 extends Base {
     //速度
     private double speed;
     //方向
-    private double direction;
+    private int direction;
     //时间
     private String time;
     //车牌号码
@@ -41,7 +41,7 @@ public class T0F01 extends Base {
     public T0F01() {
     }
 
-    public T0F01(double longitude, double latitude, int altitude, double speed, double direction, String time, String licensePlate, String driverId, String carriageState, String liftState, String emptyWeightState) {
+    public T0F01(double longitude, double latitude, int altitude, double speed, int direction, String time, String licensePlate, String driverId, String carriageState, String liftState, String emptyWeightState) {
         this.longitude = longitude;
         this.latitude = latitude;
         this.altitude = altitude;
@@ -95,11 +95,11 @@ public class T0F01 extends Base {
         this.speed = speed;
     }
 
-    public double getDirection() {
+    public int getDirection() {
         return direction;
     }
 
-    public void setDirection(double direction) {
+    public void setDirection(int direction) {
         this.direction = direction;
     }
 

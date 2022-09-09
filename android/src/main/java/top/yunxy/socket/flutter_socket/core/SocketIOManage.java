@@ -56,10 +56,10 @@ public class SocketIOManage {
     public void send(String code, String socketType, int msgId, String data) {
         lock.lock();
         for (SocketIO socket : sockets) {
-            if(code != "" && !code.equals(socket.code)) {
+            if (!code.equals("") && !code.equals(socket.code)) {
                 continue;
             }
-            if(socketType != "" && !socketType.equals(socket.type)) {
+            if(!socketType.equals("") && !socketType.equals(socket.type)) {
                 continue;
             }
             socket.send(msgId, data);
@@ -70,10 +70,10 @@ public class SocketIOManage {
     public void sendMedia(String code, String socketType, String t0800, String t0200, byte[] data) {
         lock.lock();
         for (SocketIO socket : sockets) {
-            if(code != "" && !code.equals(socket.code)) {
+            if (!code.equals("") && !code.equals(socket.code)) {
                 continue;
             }
-            if(socketType != "" && !socketType.equals(socket.type)) {
+            if(!socketType.equals("") && !socketType.equals(socket.type)) {
                 continue;
             }
             socket.sendMedia(t0800, t0200, data);

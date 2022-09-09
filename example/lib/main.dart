@@ -89,7 +89,15 @@ class _MyAppState extends State<MyApp> {
               }, child: const Text('连接'),),
               RaisedButton(onPressed: () {
                 FlutterSocket.close();
-              }, child: const Text('关闭'),)
+              }, child: const Text('关闭'),),
+              RaisedButton(onPressed: () {
+                String data = '{"msgId":512,"alarm":0,"state":3,"latitude":26.11698,"longitude":119.23654,"altitude":0,"speed":10.9,"direction":45,"time":"2022-09-09 13:04:29","mileage":99739.67}';
+                FlutterSocket.send(0x0200, data);
+              }, child: const Text('T0200'),),
+              RaisedButton(onPressed: () {
+                String data = '{"msgId":3841,"longitude":119.23654,"latitude":26.11698,"altitude":0,"speed":10.9,"direction":45,"time":"2022-09-09 13:04:29","licensePlate":"闽AS6257","driverId":"13120210113","carriageState":"关闭","liftState":"平放","emptyWeightState":"空车"}';
+                FlutterSocket.send(0x0f01, data);
+              }, child: const Text('T0F01'),),
             ],
           ),
         ),

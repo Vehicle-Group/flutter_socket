@@ -26,7 +26,7 @@ public class T0200 extends Base {
     //速度
     private double speed;
     //方向
-    private double direction;
+    private int direction;
     //时间
     private String time;
     //里程
@@ -37,7 +37,7 @@ public class T0200 extends Base {
     public T0200() {
     }
 
-    public T0200(int alarm, int state, double latitude, double longitude, int altitude, double speed, double direction, String time, double mileage) {
+    public T0200(int alarm, int state, double latitude, double longitude, int altitude, double speed, int direction, String time, double mileage) {
         this.alarm = alarm;
         this.state = state;
         this.latitude = latitude;
@@ -105,11 +105,11 @@ public class T0200 extends Base {
         this.speed = speed;
     }
 
-    public double getDirection() {
+    public int getDirection() {
         return direction;
     }
 
-    public void setDirection(double direction) {
+    public void setDirection(int direction) {
         this.direction = direction;
     }
 

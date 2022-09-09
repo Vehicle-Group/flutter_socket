@@ -142,7 +142,7 @@ public class SocketIO {
             return;
         }
         final int serNo = nextSerialNo();
-        byte[] data = DataTypeUtil.toWriteBytes(code, new T0002().toContent(), serNo);
+        byte[] data = DataTypeUtil.toWriteBytes(code, msgContent, serNo);
         send(new Message(msgId, data, serNo));
     }
 
