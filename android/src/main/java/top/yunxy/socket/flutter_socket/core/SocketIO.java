@@ -290,12 +290,24 @@ public class SocketIO {
                         }
                         try {
                             timeLock.lock(5000);
-                            if(!getConnectState()) {
+                            if (!getConnectState()) {
                                 continue;
                             }
-                            putMessageRecord(message.getSerialNo());
-                            debug("<<<-", message.toString());
-                            out.write(message.getData());
+                            //重发
+                            if (existMessageRecord(message.getSerialNo())) {
+                                putMessageRecord(message.getSerialNo());
+                                debug("<<<-", message.toString());
+                                out.write(message.getData());
+                                out.flush();
+                                lastSendInterval = System.currentTimeMillis();
+                                continue;
+                            }
+                            SendMessage sendMessage = getLastMessageQueue(5);
+                            for (Message msg : sendMessage.getMessages()) {
+                                putMessageRecord(msg.getSerialNo());
+                                debug("<<<-", msg.toString());
+                            }
+                            out.write(sendMessage.getData());
                             out.flush();
                             lastSendInterval = System.currentTimeMillis();
                         } catch (InterruptedException e) {
@@ -446,7 +458,7 @@ public class SocketIO {
     }
 
     private void logout() {
-        if(!getConnectState()) {
+        if (!getConnectState()) {
             return;
         }
         try {
@@ -509,6 +521,25 @@ public class SocketIO {
         Message message = (Message) messageQueue.getLast();
         messageQueueLock.unlock();
         return message;
+    }
+
+    private SendMessage getLastMessageQueue(int size) {
+        messageQueueLock.lock();
+        size = size > messageQueue.size() ? messageQueue.size() : size;
+        List<Byte> data = new ArrayList<>();
+        List<Message> list = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            Message message = (Message) messageQueue.removeLast();
+            for (byte b : message.getData()) {
+                data.add(b);
+            }
+            list.add(message);
+        }
+        for (int i = list.size() - 1; i >= 0; i--) {
+            messageQueue.addLast(list.get(i));
+        }
+        messageQueueLock.unlock();
+        return new SendMessage(DataTypeUtil.toBYTES(data), list);
     }
 
     private Message removeLastMessageQueue() {
