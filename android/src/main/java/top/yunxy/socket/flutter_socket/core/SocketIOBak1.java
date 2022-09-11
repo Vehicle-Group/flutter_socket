@@ -1,20 +1,45 @@
 package top.yunxy.socket.flutter_socket.core;
 
 import android.os.Handler;
+import android.os.Looper;
 
 import com.google.gson.Gson;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-import top.yunxy.socket.flutter_socket.jtt.*;
+import top.yunxy.socket.flutter_socket.jtt.MessageType;
+import top.yunxy.socket.flutter_socket.jtt.MsgContent;
+import top.yunxy.socket.flutter_socket.jtt.MsgHead;
+import top.yunxy.socket.flutter_socket.jtt.T0001;
+import top.yunxy.socket.flutter_socket.jtt.T0002;
+import top.yunxy.socket.flutter_socket.jtt.T0003;
+import top.yunxy.socket.flutter_socket.jtt.T0102;
+import top.yunxy.socket.flutter_socket.jtt.T0200;
+import top.yunxy.socket.flutter_socket.jtt.T0800;
+import top.yunxy.socket.flutter_socket.jtt.T0801;
+import top.yunxy.socket.flutter_socket.jtt.T0805;
+import top.yunxy.socket.flutter_socket.jtt.T0F01;
+import top.yunxy.socket.flutter_socket.jtt.T8001;
+import top.yunxy.socket.flutter_socket.jtt.T8003;
+import top.yunxy.socket.flutter_socket.jtt.T8800;
+import top.yunxy.socket.flutter_socket.jtt.T8801;
+import top.yunxy.socket.flutter_socket.jtt.T8803;
+import top.yunxy.socket.flutter_socket.jtt.T9101;
+import top.yunxy.socket.flutter_socket.jtt.T9102;
 import top.yunxy.socket.flutter_socket.util.DataTypeUtil;
 import top.yunxy.socket.flutter_socket.util.HexUtil;
 
-import android.os.Looper;
-
-public class SocketIO {
+public class SocketIOBak1 {
     String ip;
     List<Integer> ports;
     String type;
@@ -23,17 +48,34 @@ public class SocketIO {
     private Socket socket;
     private boolean authState = false;
     private boolean exit = false;
+    private long lastSendInterval = 0;
     private int serialNo = 0;
     private long connectInterval = 0;
-    private long lastSendInterval = 0;
+    private LinkedList messageQueue = new LinkedList<Message>();
+    private HashMap messageRecord = new HashMap<Integer, Long>();
+    private Lock messageQueueLock = new ReentrantLock();
+    private Lock messageRecordLock = new ReentrantLock();
     private TimeLock timeLock = new TimeLock();
-    private TimeLock mediaTimeLock = new TimeLock();
     private Event streamEvent;
+    private final int bufSize = 450;
     private final Handler handler;
-    private RecordMessage recordMessage = new RecordMessage();
-    private RecordMediaMessage recordMediaMessage = new RecordMediaMessage();
+    //media
+    private Lock mediaLock = new ReentrantLock();
+    private HashMap mediaMap = new HashMap<String, HashMap<Integer, Message>>();
 
-    public SocketIO(String ip, List<Integer> ports, String type, String code, boolean heartbeat, Event streamEvent) {
+    public SocketIOBak1(String ip, List<Integer> ports, String type, String code, boolean heartbeat) {
+        this.ip = ip;
+        this.ports = ports;
+        this.type = type;
+        this.code = code;
+        this.heartbeat = heartbeat;
+        this.handler = new Handler(Looper.getMainLooper());
+        this.connect();
+        this.sendHandle();
+        this.runHeartbeat();
+    }
+
+    public SocketIOBak1(String ip, List<Integer> ports, String type, String code, boolean heartbeat, Event streamEvent) {
         this.ip = ip;
         this.ports = ports;
         this.type = type;
@@ -99,7 +141,11 @@ public class SocketIO {
         if (exit) {
             return;
         }
-        recordMessage.add(message);
+        new Thread(() -> {
+            messageQueueLock.lock();
+            messageQueue.addFirst(message);
+            messageQueueLock.unlock();
+        }).start();
     }
 
     public synchronized void send(int msgId, String json) {
@@ -129,7 +175,7 @@ public class SocketIO {
         send(new Message(msgId, data, serNo));
     }
 
-    public void sendMedia(String t0800Json, String t0200Json, byte[] bytes) {
+    public synchronized void sendMedia(String t0800Json, String t0200Json, byte[] bytes) {
         Gson gson = new Gson();
         T0800 t0800 = gson.fromJson(t0800Json, T0800.class);
         T0200 t0200 = gson.fromJson(t0200Json, T0200.class);
@@ -137,25 +183,77 @@ public class SocketIO {
         for (byte b : bytes) {
             data.add(b);
         }
-        recordMediaMessage.add(new MediaMessage(t0800, t0200, data));
+        int total = (int) Math.ceil((data.size() * 1.0 / bufSize));
+        int serNo = nextSerialNo(total + 1);
+        //T0800
+        byte[] t0800Data = DataTypeUtil.toWriteBytes(code, t0800.toContent(), serNo);
+        send(new Message(0x0800, t0800Data, serNo));
+        serNo++;
+        //send 0801
+        int mediaId = t0800.getId();
+        String key = mediaId + "-" + serNo;
+        Map<Integer, Message> messageMap = new HashMap<>();
+        for (int i = 0; i < total; i++) {
+            int start = i * bufSize;
+            int end = (i + 1) * bufSize;
+            if (end > data.size()) {
+                end = data.size();
+            }
+            List<Byte> subData = data.subList(start, end);
+            MsgContent msgContent;
+            if (i == 0) {
+                msgContent = new T0801(mediaId, 0, 0, 0, 1, t0200, DataTypeUtil.toBYTES(subData)).toContent();
+            } else {
+                msgContent = new MsgContent(0x0801, DataTypeUtil.toBYTES(subData));
+            }
+            byte[] realData = DataTypeUtil.toWriteBytes(code, msgContent, (serNo + i) % 65535, total != 1, total, i + 1);
+            Message message = new Message(0x0801, realData, (serNo + i) % 65535, true, total, i + 1);
+            messageMap.put(i + 1, message);
+            send(message);
+        }
+        mediaLock.lock();
+        mediaMap.put(key, messageMap);
+        mediaLock.unlock();
     }
 
-    public void resendMedia(int sign, List<Integer> ids, boolean isMedia) {
-        byte[] data = recordMediaMessage.retry(sign, ids, isMedia);
-        if(data.length == 0) {
-            return;
+    public void resendMulti(int serNo, List<Integer> ids) {
+        mediaLock.lock();
+        for (Object o : mediaMap.keySet()) {
+            String key = (String) o;
+            if (!key.contains("-" + serNo)) {
+                continue;
+            }
+            if (ids.isEmpty()) {
+                mediaMap.remove(key);
+                break;
+            }
+            for (Integer id : ids) {
+                HashMap<Integer, Message> messageMap = (HashMap<Integer, Message>) mediaMap.get(key);
+                send(messageMap.get(id));
+            }
+            break;
         }
-        if (!getConnectState()) {
-            return;
+        mediaLock.unlock();
+    }
+
+    public void resendMedia(int mediaId, List<Integer> ids) {
+        mediaLock.lock();
+        for (Object o : mediaMap.keySet()) {
+            String key = (String) o;
+            if (!key.contains(mediaId + "-")) {
+                continue;
+            }
+            if (ids.isEmpty()) {
+                mediaMap.remove(key);
+                break;
+            }
+            for (Integer id : ids) {
+                HashMap<Integer, Message> messageMap = (HashMap<Integer, Message>) mediaMap.get(key);
+                send(messageMap.get(id));
+            }
+            break;
         }
-        try {
-            debug("<<<- resend media", HexUtil.encode(data));
-            OutputStream os = socket.getOutputStream();
-            os.write(data);
-            os.flush();
-            lastSendInterval = System.currentTimeMillis();
-        } catch (Exception e) {
-        }
+        mediaLock.unlock();
     }
 
     public void close() {
@@ -172,6 +270,10 @@ public class SocketIO {
 
     public boolean getConnectState() {
         return socket != null && socket.isConnected();
+    }
+
+    public boolean getAuthState() {
+        return authState;
     }
 
     private int nextSerialNo() {
@@ -199,33 +301,12 @@ public class SocketIO {
                 try {
                     out = socket.getOutputStream();
                     while (getConnectState()) {
-                        if (!authState) {
+                        if (!authState || emptyMessageQueue()) {
                             Thread.sleep(wait);
                             continue;
                         }
-
-                        if (recordMediaMessage.next(code, serialNo, total -> nextSerialNo(total))) {
-                            try {
-                                mediaTimeLock.lock(20000);
-                                if (!getConnectState()) {
-                                    continue;
-                                }
-                                byte[] data = recordMediaMessage.find();
-                                debug("<<<- media", HexUtil.encode(data));
-                                out.write(data);
-                                out.flush();
-                                lastSendInterval = System.currentTimeMillis();
-                            } catch (InterruptedException e) {
-                                debug("多媒体超时未响应");
-                                errorHandle();
-                                mediaTimeLock.unlock();
-                            } finally {
-                                continue;
-                            }
-                        }
-
-
-                        if (!recordMessage.next()) {
+                        Message message = getLastMessageQueue();
+                        if (existMessageRecord(message.getSerialNo()) && System.currentTimeMillis() < (getMessageRecord(message.getSerialNo()) + 5000)) {
                             Thread.sleep(wait);
                             continue;
                         }
@@ -234,11 +315,28 @@ public class SocketIO {
                             if (!getConnectState()) {
                                 continue;
                             }
-                            Message message = recordMessage.find();
+                            putMessageRecord(message.getSerialNo());
                             debug("<<<-", message.toString());
                             out.write(message.getData());
                             out.flush();
                             lastSendInterval = System.currentTimeMillis();
+//                            //重发
+//                            if (existMessageRecord(message.getSerialNo())) {
+//                                putMessageRecord(message.getSerialNo());
+//                                debug("<<<-", message.toString());
+//                                out.write(message.getData());
+//                                out.flush();
+//                                lastSendInterval = System.currentTimeMillis();
+//                                continue;
+//                            }
+//                            SendMessage sendMessage = getLastMessageQueue(5);
+//                            for (Message msg : sendMessage.getMessages()) {
+//                                putMessageRecord(msg.getSerialNo());
+//                                debug("<<<-", msg.toString());
+//                            }
+//                            out.write(sendMessage.getData());
+//                            out.flush();
+//                            lastSendInterval = System.currentTimeMillis();
                         } catch (InterruptedException e) {
                             debug("超时未响应");
                             errorHandle();
@@ -296,7 +394,12 @@ public class SocketIO {
             case 0x8001:
                 final T8001 t8001 = new T8001(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8001.toString(), hex);
-                recordMessage.remove(t8001.getAnswerSerialNo());
+                if (!emptyMessageQueue()) {
+                    if (existMessageRecord(t8001.getAnswerSerialNo())) {
+                        removeMessageRecord(t8001.getAnswerSerialNo());
+                        removeLastMessageQueue();
+                    }
+                }
                 if (t8001.getAnswerId() == 0x0102 && t8001.getResult() == 0) {
                     authState = true;
                     call("auth", true);
@@ -304,20 +407,18 @@ public class SocketIO {
                 if (t8001.getAnswerId() == 0x0003 && t8001.getResult() == 0) {
                     closeSocket();
                 }
+//                streamHandle(t8001, msgHead.getSerialNo());
                 break;
             case 0x8003:
                 final T8003 t8003 = new T8003(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8003.toString(), hex);
-                resendMedia(t8003.getSerialNo(), t8003.getIds(), false);
+                resendMulti(t8003.getSerialNo(), t8003.getIds());
                 call("event", gson.toJson(t8003), msgHead.getSerialNo());
                 break;
             case 0x8800:
                 final T8800 t8800 = new T8800(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8800.toString(), hex);
-                if (t8800.getIds().isEmpty()) {
-                    mediaTimeLock.unlock();
-                }
-                resendMedia(t8800.getId(), t8800.getIds(), true);
+                resendMedia(t8800.getId(), t8800.getIds());
                 call("event", gson.toJson(t8800), msgHead.getSerialNo());
                 break;
             case 0x8801:
@@ -423,7 +524,7 @@ public class SocketIO {
             int wait = 2500;
             while (!exit && heartbeat) {
                 long timestamp = System.currentTimeMillis();
-                if (!getConnectState() || !authState || lastSendInterval == 0 || timestamp - lastSendInterval < wait || !recordMediaMessage.empty()) {
+                if (!getConnectState() || !authState || lastSendInterval == 0 || timestamp - lastSendInterval < wait) {
                     try {
                         Thread.sleep(wait);
                     } catch (InterruptedException e) {
@@ -436,5 +537,76 @@ public class SocketIO {
                 send(new Message(0x0002, data, serNo));
             }
         }).start();
+    }
+
+    private boolean emptyMessageQueue() {
+        messageQueueLock.lock();
+        boolean empty = messageQueue.isEmpty();
+        messageQueueLock.unlock();
+        return empty;
+    }
+
+    private Message getLastMessageQueue() {
+        messageQueueLock.lock();
+        Message message = (Message) messageQueue.getLast();
+        messageQueueLock.unlock();
+        return message;
+    }
+
+    private SendMessage getLastMessageQueue(int size) {
+        messageQueueLock.lock();
+        size = size > messageQueue.size() ? messageQueue.size() : size;
+        List<Byte> data = new ArrayList<>();
+        List<Message> list = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            Message message = (Message) messageQueue.removeLast();
+            for (byte b : message.getData()) {
+                data.add(b);
+            }
+            list.add(message);
+        }
+        for (int i = list.size() - 1; i >= 0; i--) {
+            messageQueue.addLast(list.get(i));
+        }
+        messageQueueLock.unlock();
+        return new SendMessage(DataTypeUtil.toBYTES(data), list);
+    }
+
+    private Message removeLastMessageQueue() {
+        messageQueueLock.lock();
+        Message message = (Message) messageQueue.removeLast();
+        messageQueueLock.unlock();
+        return message;
+    }
+
+    private boolean existMessageRecord(int serNo) {
+        messageRecordLock.lock();
+        boolean exist = messageRecord.containsKey(serNo);
+        messageRecordLock.unlock();
+        return exist;
+    }
+
+    private long getMessageRecord(int serNo) {
+        messageRecordLock.lock();
+        long v;
+        if (!messageRecord.containsKey(serNo)) {
+            v = System.currentTimeMillis();
+        } else {
+            v = (long) messageRecord.get(serNo);
+        }
+        messageRecordLock.unlock();
+        return v;
+    }
+
+    private void putMessageRecord(int serNo) {
+        messageRecordLock.lock();
+        messageRecord.put(serNo, System.currentTimeMillis());
+        messageRecordLock.unlock();
+    }
+
+    private void removeMessageRecord(int serNo) {
+        messageRecordLock.lock();
+        messageRecord.remove(serNo);
+        messageRecordLock.unlock();
     }
 }

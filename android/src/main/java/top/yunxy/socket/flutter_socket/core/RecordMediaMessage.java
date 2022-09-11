@@ -1,0 +1,118 @@
+package top.yunxy.socket.flutter_socket.core;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import top.yunxy.socket.flutter_socket.jtt.MsgContent;
+import top.yunxy.socket.flutter_socket.jtt.T0801;
+import top.yunxy.socket.flutter_socket.util.DataTypeUtil;
+
+public class RecordMediaMessage {
+    private final int bufSize = 450;
+
+    private LinkedList queue = new LinkedList<MediaMessage>();
+
+    private byte[] curData;
+
+    private int curSerialNo = -1;
+
+    private int curMediaId = -1;
+
+    private Map<Integer, Message> curMediaMap = new HashMap<>();
+
+    private Long lastSendInterval = 0L;
+
+    public RecordMediaMessage() {
+    }
+
+    public synchronized boolean empty() {
+        return queue.size() == 0;
+    }
+
+    public synchronized void add(MediaMessage mediaMessage) {
+        queue.addFirst(mediaMessage);
+    }
+
+    public synchronized boolean next(String code, int serNo, SerialNoEvent event) {
+        if (curMediaId != -1 && System.currentTimeMillis() < lastSendInterval + 30000) {
+            return false;
+        }
+        if(curMediaId == -1) {
+            if(queue.isEmpty()) {
+                return false;
+            }
+            generate(code, serNo, event);
+        }
+        return true;
+    }
+
+    private synchronized void generate(String code, int serNo, SerialNoEvent event) {
+        List<Byte> list = new ArrayList<>();
+        MediaMessage media = (MediaMessage) queue.removeLast();
+        int total = (int) Math.ceil((media.getData().size() * 1.0 / bufSize));
+        event.call(total + 1);
+        // 0800
+        byte[] t0800Data = DataTypeUtil.toWriteBytes(code, media.getT0800().toContent(), serNo % 65535);
+        for (byte b : t0800Data) {
+            list.add(b);
+        }
+        serNo++;
+        //0801
+        curSerialNo = serNo % 65535;
+        curMediaId = media.getT0800().getId();
+        for (int i = 0; i < total; i++) {
+            int start = i * bufSize;
+            int end = (i + 1) * bufSize;
+            if (end > media.getData().size()) {
+                end = media.getData().size();
+            }
+            List<Byte> subData = media.getData().subList(start, end);
+            MsgContent msgContent;
+            if (i == 0) {
+                msgContent = new T0801(curMediaId, 0, 0, 0, 1, media.getT0200(), DataTypeUtil.toBYTES(subData)).toContent();
+            } else {
+                msgContent = new MsgContent(0x0801, DataTypeUtil.toBYTES(subData));
+            }
+            byte[] realData = DataTypeUtil.toWriteBytes(code, msgContent, (serNo + i) % 65535, total != 1, total, i + 1);
+            for (byte b : realData) {
+                list.add(b);
+            }
+            Message message = new Message(0x0801, realData, (serNo + i) % 65535, true, total, i + 1);
+            curMediaMap.put(i + 1, message);
+        }
+        curData = DataTypeUtil.toBYTES(list);
+    }
+
+    public synchronized byte[] find() {
+        lastSendInterval = System.currentTimeMillis();
+        return curData;
+    }
+
+    public synchronized byte[] retry(int sign, List<Integer> ids, boolean isMedia) {
+        if (isMedia && sign != curMediaId) {
+            return new byte[]{};
+        }
+        if (!isMedia && sign != curSerialNo) {
+            return new byte[]{};
+        }
+        if (ids.size() == 0) {
+            curSerialNo = -1;
+            curMediaId = -1;
+            curMediaMap.clear();
+            return new byte[]{};
+        }
+        List<Byte> list = new ArrayList<>();
+        for (Integer id : ids) {
+            Message message = curMediaMap.get(id);
+            for (byte b : message.getData()) {
+                list.add(b);
+            }
+        }
+        return DataTypeUtil.toBYTES(list);
+    }
+}
