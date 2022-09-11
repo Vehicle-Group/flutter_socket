@@ -14,6 +14,10 @@ public class RecordMessage {
     public RecordMessage() {
     }
 
+    public boolean empty() {
+        return queue.size() == 0;
+    }
+
     public synchronized void add(Message message) {
         queue.addFirst(message);
     }

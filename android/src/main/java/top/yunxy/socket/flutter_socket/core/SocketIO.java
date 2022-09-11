@@ -129,7 +129,7 @@ public class SocketIO {
         send(new Message(msgId, data, serNo));
     }
 
-    public void sendMedia(String t0800Json, String t0200Json, byte[] bytes) {
+    public synchronized void sendMedia(String t0800Json, String t0200Json, byte[] bytes) {
         Gson gson = new Gson();
         T0800 t0800 = gson.fromJson(t0800Json, T0800.class);
         T0200 t0200 = gson.fromJson(t0200Json, T0200.class);
@@ -140,7 +140,7 @@ public class SocketIO {
         recordMediaMessage.add(new MediaMessage(t0800, t0200, data));
     }
 
-    public void resendMedia(int sign, List<Integer> ids, boolean isMedia) {
+    public synchronized void resendMedia(int sign, List<Integer> ids, boolean isMedia) {
         byte[] data = recordMediaMessage.retry(sign, ids, isMedia);
         if(data.length == 0) {
             return;
@@ -204,7 +204,7 @@ public class SocketIO {
                             continue;
                         }
 
-                        if (recordMediaMessage.next(code, serialNo, total -> nextSerialNo(total))) {
+                        if (recordMessage.empty() && recordMediaMessage.next(code, serialNo, total -> nextSerialNo(total))) {
                             try {
                                 mediaTimeLock.lock(20000);
                                 if (!getConnectState()) {
@@ -216,7 +216,8 @@ public class SocketIO {
                                 out.flush();
                                 lastSendInterval = System.currentTimeMillis();
                             } catch (InterruptedException e) {
-                                debug("多媒体超时未响应");
+                                debug("多媒体超时未响应", e.toString());
+                                e.printStackTrace();
                                 errorHandle();
                                 mediaTimeLock.unlock();
                             } finally {
@@ -240,12 +241,15 @@ public class SocketIO {
                             out.flush();
                             lastSendInterval = System.currentTimeMillis();
                         } catch (InterruptedException e) {
-                            debug("超时未响应");
+                            debug("超时未响应", e.toString());
+                            e.printStackTrace();
                             errorHandle();
                             timeLock.unlock();
                         }
                     }
                 } catch (Exception e) {
+                    debug("sendHandle", e.toString());
+                    e.printStackTrace();
                     errorHandle();
                 } finally {
                     try {
@@ -280,6 +284,8 @@ public class SocketIO {
                     }
                 }
             } catch (Exception e) {
+                debug("dataHandle" + e);
+                e.printStackTrace();
                 errorHandle();
             } finally {
                 try {
