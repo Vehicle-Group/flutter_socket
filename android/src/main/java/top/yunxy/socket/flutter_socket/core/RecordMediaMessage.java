@@ -1,6 +1,7 @@
 package top.yunxy.socket.flutter_socket.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import top.yunxy.socket.flutter_socket.jtt.MsgContent;
+import top.yunxy.socket.flutter_socket.jtt.T0800;
 import top.yunxy.socket.flutter_socket.jtt.T0801;
 import top.yunxy.socket.flutter_socket.util.DataTypeUtil;
 
@@ -26,6 +28,8 @@ public class RecordMediaMessage {
     private Map<Integer, Message> curMediaMap = new HashMap<>();
 
     private Long lastSendInterval = 0L;
+
+    private Message t0800Message;
 
     public RecordMediaMessage() {
     }
@@ -58,6 +62,7 @@ public class RecordMediaMessage {
         event.call(total + 1);
         // 0800
         byte[] t0800Data = DataTypeUtil.toWriteBytes(code, media.getT0800().toContent(), serNo % 65535);
+        t0800Message = new Message(0x0800, t0800Data, serNo % 65535);
         for (byte b : t0800Data) {
             list.add(b);
         }
@@ -91,6 +96,16 @@ public class RecordMediaMessage {
     public synchronized byte[] find() {
         lastSendInterval = System.currentTimeMillis();
         return curData;
+    }
+
+    public synchronized List<Message> finds() {
+        List<Message> data = new ArrayList<>();
+        for (Integer key : curMediaMap.keySet()) {
+            data.add(curMediaMap.get(key));
+        }
+        Collections.sort(data);
+        data.add(0, t0800Message);
+        return data;
     }
 
     public synchronized byte[] retry(int sign, List<Integer> ids, boolean isMedia) {

@@ -3,7 +3,7 @@ package top.yunxy.socket.flutter_socket.core;
 import top.yunxy.socket.flutter_socket.jtt.MessageType;
 import top.yunxy.socket.flutter_socket.util.HexUtil;
 
-public class Message {
+public class Message implements Comparable<Message> {
     private int msgId;
     private byte[] data;
     private int serialNo;
@@ -17,6 +17,7 @@ public class Message {
         this.serialNo = serialNo;
         this.divide = false;
         this.total = 1;
+        this.packageNo = 0;
     }
 
     public Message(int msgId, byte[] data, int serialNo, boolean divide, int total, int packageNo) {
@@ -93,5 +94,10 @@ public class Message {
                 ", packageNo=" + packageNo +
                 ", data=" + HexUtil.encode(data) +
                 '}';
+    }
+
+    @Override
+    public int compareTo(Message message) {
+        return this.packageNo - message.getSerialNo();
     }
 }

@@ -210,10 +210,11 @@ public class SocketIO {
                                 if (!getConnectState()) {
                                     continue;
                                 }
-                                byte[] data = recordMediaMessage.find();
-                                debug("<<<- media", HexUtil.encode(data));
-                                out.write(data);
-                                out.flush();
+                                for (Message message : recordMediaMessage.finds()) {
+                                    debug("<<<-", message.toString());
+                                    out.write(message.getData());
+                                    out.flush();
+                                }
                                 lastSendInterval = System.currentTimeMillis();
                             } catch (InterruptedException e) {
                                 debug("多媒体超时未响应", e.toString());
