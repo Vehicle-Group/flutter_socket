@@ -276,8 +276,11 @@ public class SocketIO {
                     timeLock.unlock();
                     final List<byte[]> multiData = DataTypeUtil.toReverMulti(buf);
                     for (byte[] oData : multiData) {
-                        debug("origin hex", HexUtil.encode(oData));
                         byte[] data = DataTypeUtil.toRever(oData);
+                        debug("origin hex", HexUtil.encode(oData), "length", data.length + "");
+                        if(data.length == 0) {
+                            continue;
+                        }
                         final MsgHead msgHead = new MsgHead(data);
                         final int msgHeadLen = msgHead.toBytes().length;
                         byte[] body = DataTypeUtil.toBYTES(data, msgHeadLen, msgHeadLen + msgHead.getMsgLen());
