@@ -110,7 +110,6 @@ public class RecordMediaMessage {
     }
 
     public synchronized List<Message> retry(int sign, List<Integer> ids, boolean isMedia) {
-        System.out.println("clear empty " + sign + " " + ids.isEmpty() + " " + isMedia + " ");
         if (isMedia && sign != curMediaId) {
             return new ArrayList<>();
         }
@@ -118,7 +117,6 @@ public class RecordMediaMessage {
             return new ArrayList<>();
         }
         if (ids.isEmpty()) {
-            System.out.println("clear success");
             curSerialNo = -1;
             curMediaId = -1;
             curMediaMap.clear();

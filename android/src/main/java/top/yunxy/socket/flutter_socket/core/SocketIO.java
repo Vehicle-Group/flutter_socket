@@ -332,9 +332,7 @@ public class SocketIO {
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8800.toString(), hex);
                 resendMedia(t8800.getId(), t8800.getIds(), true);
                 if (t8800.getIds().isEmpty()) {
-                    debug("unlock media", "ids:", t8800.getIds().size() + "");
                     mediaTimeLock.unlock();
-                    sendAnswer(msgHead);
                 }
                 call("event", gson.toJson(t8800), msgHead.getSerialNo());
                 break;
