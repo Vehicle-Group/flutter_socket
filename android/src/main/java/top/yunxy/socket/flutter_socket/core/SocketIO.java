@@ -386,9 +386,9 @@ public class SocketIO {
         for (String arg : args) {
             sb.append(arg + " ");
         }
-        String time = sdf.format(new Date());
-        System.out.println(time + " " + sb);
-//        call("debug", sb.toString());
+//        String time = sdf.format(new Date());
+//        System.out.println(time + " " + sb);
+        call("debug", sb.toString());
     }
 
     private void closeSocket() {
