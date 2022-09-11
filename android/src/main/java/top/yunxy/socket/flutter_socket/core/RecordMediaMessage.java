@@ -109,26 +109,25 @@ public class RecordMediaMessage {
         return data;
     }
 
-    public synchronized byte[] retry(int sign, List<Integer> ids, boolean isMedia) {
+    public synchronized List<Message> retry(int sign, List<Integer> ids, boolean isMedia) {
         if (isMedia && sign != curMediaId) {
-            return new byte[]{};
+            return new ArrayList<>();
         }
         if (!isMedia && sign != curSerialNo) {
-            return new byte[]{};
+            return new ArrayList<>();
         }
         if (ids.size() == 0) {
             curSerialNo = -1;
             curMediaId = -1;
             curMediaMap.clear();
-            return new byte[]{};
+            return new ArrayList<>();
         }
+        List<Message> data = new ArrayList<>();
         List<Byte> list = new ArrayList<>();
         for (Integer id : ids) {
             Message message = curMediaMap.get(id);
-            for (byte b : message.getData()) {
-                list.add(b);
-            }
+            data.add(message);
         }
-        return DataTypeUtil.toBYTES(list);
+        return data;
     }
 }

@@ -141,18 +141,17 @@ public class SocketIO {
     }
 
     public synchronized void resendMedia(int sign, List<Integer> ids, boolean isMedia) {
-        byte[] data = recordMediaMessage.retry(sign, ids, isMedia);
-        if(data.length == 0) {
-            return;
-        }
         if (!getConnectState()) {
             return;
         }
         try {
-            debug("<<<- resend media", HexUtil.encode(data));
-            OutputStream os = socket.getOutputStream();
-            os.write(data);
-            os.flush();
+            OutputStream out = socket.getOutputStream();
+            List<Message> messages = recordMediaMessage.retry(sign, ids, isMedia);
+            for (Message message : messages) {
+                debug("<<<- resend", message.toString());
+                out.write(message.getData());
+                out.flush();
+            }
             lastSendInterval = System.currentTimeMillis();
         } catch (Exception e) {
         }
