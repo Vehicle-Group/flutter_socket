@@ -275,7 +275,7 @@ public class SocketIO {
                     for (byte[] oData : multiData) {
                         try {
                             byte[] data = DataTypeUtil.toRever(oData);
-                            if(data.length == 0) {
+                            if (data.length == 0) {
                                 debug("rever data length 0");
                                 continue;
                             }
@@ -359,9 +359,20 @@ public class SocketIO {
     }
 
     private void sendAnswer(MsgHead msgHead) {
-        final int serNo = nextSerialNo();
-        byte[] data = DataTypeUtil.toWriteBytes(code, new T0001(msgHead.getSerialNo(), msgHead.getMsgId(), 0).toContent(), serNo);
-        send(new Message(0x0001, data, serNo));
+        if (!getConnectState()) {
+            return;
+        }
+        try {
+            final int serNo = nextSerialNo();
+            byte[] data = DataTypeUtil.toWriteBytes(code, new T0001(msgHead.getSerialNo(), msgHead.getMsgId(), 0).toContent(), serNo);
+            Message message = new Message(0x0001, data, serNo);
+            debug("<<<-", message.toString());
+            OutputStream os = socket.getOutputStream();
+            os.write(message.getData());
+            os.flush();
+            lastSendInterval = System.currentTimeMillis();
+        } catch (Exception e) {
+        }
     }
 
     private void debug(String... args) {
