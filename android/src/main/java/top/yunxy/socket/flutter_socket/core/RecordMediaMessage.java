@@ -46,8 +46,8 @@ public class RecordMediaMessage {
         if (curMediaId != -1 && System.currentTimeMillis() < lastSendInterval + 30000) {
             return false;
         }
-        if(curMediaId == -1) {
-            if(queue.isEmpty()) {
+        if (curMediaId == -1) {
+            if (queue.isEmpty()) {
                 return false;
             }
             generate(code, serNo, event);
@@ -99,6 +99,9 @@ public class RecordMediaMessage {
     }
 
     public synchronized List<Message> finds() {
+        if (curMediaId == -1) {
+            return new ArrayList<>();
+        }
         lastSendInterval = System.currentTimeMillis();
         List<Message> data = new ArrayList<>();
         for (Integer key : curMediaMap.keySet()) {
