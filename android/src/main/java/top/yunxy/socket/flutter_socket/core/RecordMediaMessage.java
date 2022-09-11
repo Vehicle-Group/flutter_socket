@@ -110,20 +110,21 @@ public class RecordMediaMessage {
     }
 
     public synchronized List<Message> retry(int sign, List<Integer> ids, boolean isMedia) {
+        System.out.println("clear empty " + sign + " " + ids.isEmpty() + " " + isMedia + " ");
         if (isMedia && sign != curMediaId) {
             return new ArrayList<>();
         }
         if (!isMedia && sign != curSerialNo) {
             return new ArrayList<>();
         }
-        if (ids.size() == 0) {
+        if (ids.isEmpty()) {
+            System.out.println("clear success");
             curSerialNo = -1;
             curMediaId = -1;
             curMediaMap.clear();
             return new ArrayList<>();
         }
         List<Message> data = new ArrayList<>();
-        List<Byte> list = new ArrayList<>();
         for (Integer id : ids) {
             Message message = curMediaMap.get(id);
             data.add(message);

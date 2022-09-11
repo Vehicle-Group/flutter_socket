@@ -368,9 +368,7 @@ public class SocketIO {
     }
 
     private void sendAnswer(MsgHead msgHead) {
-        if (!getConnectState()) {
-            return;
-        }
+        debug("sendAnswer", "socket connect: ", getConnectState() + "");
         try {
             final int serNo = nextSerialNo();
             byte[] data = DataTypeUtil.toWriteBytes(code, new T0001(msgHead.getSerialNo(), msgHead.getMsgId(), 0).toContent(), serNo);
