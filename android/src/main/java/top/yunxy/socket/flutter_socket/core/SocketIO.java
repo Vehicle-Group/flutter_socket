@@ -275,6 +275,10 @@ public class SocketIO {
                     for (byte[] oData : multiData) {
                         try {
                             byte[] data = DataTypeUtil.toRever(oData);
+                            if(data.length == 0) {
+                                debug("rever data length 0");
+                                continue;
+                            }
                             final MsgHead msgHead = new MsgHead(data);
                             final int msgHeadLen = msgHead.toBytes().length;
                             byte[] body = DataTypeUtil.toBYTES(data, msgHeadLen, msgHeadLen + msgHead.getMsgLen());

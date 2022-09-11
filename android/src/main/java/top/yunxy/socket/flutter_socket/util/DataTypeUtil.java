@@ -387,8 +387,8 @@ public class DataTypeUtil {
                     data = new ArrayList<>();
                     data.add(toBYTE(T7E));
                 } else {
-                    arr.add(toBYTES(data));
                     data.add(toBYTE(T7E));
+                    arr.add(toBYTES(data));
                 }
             } else {
                 data.add(toBYTE(e));
