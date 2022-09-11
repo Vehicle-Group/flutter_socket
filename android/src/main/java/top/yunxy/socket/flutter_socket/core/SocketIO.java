@@ -130,9 +130,6 @@ public class SocketIO {
     }
 
     public synchronized void sendMedia(String t0800Json, String t0200Json, byte[] bytes) {
-        debug("T0800:", t0800Json);
-        debug("T0200:", t0200Json);
-        debug("Media: ", HexUtil.encode(bytes));
         Gson gson = new Gson();
         T0800 t0800 = gson.fromJson(t0800Json, T0800.class);
         T0200 t0200 = gson.fromJson(t0200Json, T0200.class);
@@ -208,6 +205,7 @@ public class SocketIO {
 
                         if (recordMessage.empty() && recordMediaMessage.next(code, serialNo, total -> nextSerialNo(total))) {
                             try {
+                                debug("start send Media");
                                 mediaTimeLock.lock(20000);
                                 if (!getConnectState()) {
                                     mediaTimeLock.unlock();
@@ -334,11 +332,12 @@ public class SocketIO {
             case 0x8800:
                 final T8800 t8800 = new T8800(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8800.toString(), hex);
+                resendMedia(t8800.getId(), t8800.getIds(), true);
                 if (t8800.getIds().isEmpty()) {
+                    debug("unlock media",  "ids:", t8800.getIds().size() + "");
                     mediaTimeLock.unlock();
                     sendAnswer(msgHead);
                 }
-                resendMedia(t8800.getId(), t8800.getIds(), true);
                 call("event", gson.toJson(t8800), msgHead.getSerialNo());
                 break;
             case 0x8801:
