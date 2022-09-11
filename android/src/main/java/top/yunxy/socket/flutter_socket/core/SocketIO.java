@@ -207,9 +207,15 @@ public class SocketIO {
                             try {
                                 mediaTimeLock.lock(20000);
                                 if (!getConnectState()) {
+                                    mediaTimeLock.unlock();
                                     continue;
                                 }
-                                for (Message message : recordMediaMessage.finds()) {
+                                List<Message> messages = recordMediaMessage.finds();
+                                if(messages.size() == 0) {
+                                    mediaTimeLock.unlock();
+                                    continue;
+                                }
+                                for (Message message : messages) {
                                     debug("<<<-", message.toString());
                                     out.write(message.getData());
                                     out.flush();
@@ -232,6 +238,7 @@ public class SocketIO {
                         try {
                             timeLock.lock(5000);
                             if (!getConnectState()) {
+                                timeLock.unlock();
                                 continue;
                             }
                             Message message = recordMessage.find();
