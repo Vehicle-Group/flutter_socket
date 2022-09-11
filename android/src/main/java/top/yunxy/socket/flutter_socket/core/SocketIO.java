@@ -284,7 +284,7 @@ public class SocketIO {
                     }
                 }
             } catch (Exception e) {
-                debug("dataHandle" + e);
+                debug("dataHandle", e.toString());
                 e.printStackTrace();
                 errorHandle();
             } finally {
@@ -364,7 +364,8 @@ public class SocketIO {
         for (String arg : args) {
             sb.append(arg + " ");
         }
-        call("debug", sb.toString());
+        System.out.println(sb.toString());
+//        call("debug", sb.toString());
     }
 
     private void closeSocket() {
