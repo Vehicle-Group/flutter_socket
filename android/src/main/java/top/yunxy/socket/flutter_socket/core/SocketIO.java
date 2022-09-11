@@ -264,7 +264,7 @@ public class SocketIO {
     private void dataHandle() {
         new Thread(() -> {
             InputStream in = null;
-            byte[] buf = new byte[512];
+            byte[] buf = new byte[10240];
             try {
                 in = socket.getInputStream();
                 while (!exit && getConnectState()) {
