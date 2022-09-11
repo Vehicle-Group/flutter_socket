@@ -87,7 +87,7 @@ public class Message implements Comparable<Message> {
                     '}';
         }
         return "Message{" +
-                "msgId=" + MessageType.get(msgId).toString()  +
+                "msgId=" + MessageType.get(msgId).toString() +
                 ", serialNo=" + serialNo +
                 ", divide=" + true +
                 ", total=" + total +
@@ -98,6 +98,10 @@ public class Message implements Comparable<Message> {
 
     @Override
     public int compareTo(Message message) {
-        return this.packageNo - message.getSerialNo();
+        if (this.packageNo > message.getSerialNo())
+            return 1;
+        if (this.packageNo == message.getSerialNo())
+            return 0;
+        return -1;
     }
 }
