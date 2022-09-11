@@ -76,13 +76,13 @@ class _MyAppState extends State<MyApp> {
             children: [
               Text('Running on: $_platformVersion\n'),
               RaisedButton(onPressed: () {
-                final List<String> codes = ['13120210113', '14120203335'];
+                // final List<String> codes = ['13120210113', '14120203335'];
                 String licensePlate = '闽AS6257';
-                // List<String> codes = ['13120210113'];
+                List<String> codes = ['13120210113'];
                 final List<IPInfo> ipInfoList = [
                   IPInfo('112.051.008.008', [7611, 7612, 7613], 'main'),
-                  IPInfo('39.101.130.136', [8085], 'sec'),
-                  IPInfo('61.154.39.40', [50191], 'video')
+                  // IPInfo('39.101.130.136', [8085], 'sec'),
+                  // IPInfo('61.154.39.40', [50191], 'video')
                 ];
 
                 FlutterSocket.connect(codes, json.encode(ipInfoList), true, true);

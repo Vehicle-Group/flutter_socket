@@ -207,10 +207,8 @@ public class SocketIO {
 
                         if (recordMessage.empty() && recordMediaMessage.next(code, serialNo, total -> nextSerialNo(total))) {
                             try {
-                                debug("start send Media");
-                                mediaTimeLock.lock(30000);
+                                mediaTimeLock.lock(15000);
                                 if (!getConnectState()) {
-                                    mediaTimeLock.unlock();
                                     continue;
                                 }
                                 List<Message> messages = recordMediaMessage.finds();
@@ -241,7 +239,6 @@ public class SocketIO {
                         try {
                             timeLock.lock(5000);
                             if (!getConnectState()) {
-                                timeLock.unlock();
                                 continue;
                             }
                             Message message = recordMessage.find();
@@ -271,10 +268,10 @@ public class SocketIO {
     private void dataHandle() {
         new Thread(() -> {
             InputStream in = null;
-            byte[] buf = new byte[10240];
             try {
                 in = socket.getInputStream();
                 while (!exit && getConnectState()) {
+                    byte[] buf = new byte[10240];
                     int len = in.read(buf);
                     if (len == -1) {
                         continue;
