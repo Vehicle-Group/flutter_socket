@@ -130,6 +130,9 @@ public class SocketIO {
     }
 
     public synchronized void sendMedia(String t0800Json, String t0200Json, byte[] bytes) {
+        debug("T0800:", t0800Json);
+        debug("T0200:", t0200Json);
+        debug("Media: ", HexUtil.encode(bytes));
         Gson gson = new Gson();
         T0800 t0800 = gson.fromJson(t0800Json, T0800.class);
         T0200 t0200 = gson.fromJson(t0200Json, T0200.class);
