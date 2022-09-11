@@ -3,7 +3,7 @@ package top.yunxy.socket.flutter_socket.core;
 public class TimeLock {
     private volatile boolean state = false;
 
-    public synchronized void lock() {
+    public void lock() {
         while (state) {
             try {
                 Thread.sleep(10);
@@ -13,7 +13,7 @@ public class TimeLock {
         state = true;
     }
 
-    public synchronized void lock(long mills) throws InterruptedException {
+    public void lock(long mills) throws InterruptedException {
         long cur = System.currentTimeMillis();
         while (state) {
             if (System.currentTimeMillis() - cur > mills) {
@@ -27,7 +27,7 @@ public class TimeLock {
         state = true;
     }
 
-    public synchronized void unlock() {
+    public void unlock() {
         state = false;
     }
 }
