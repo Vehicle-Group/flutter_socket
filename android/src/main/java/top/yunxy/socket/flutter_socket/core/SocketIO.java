@@ -134,9 +134,7 @@ public class SocketIO {
     public synchronized void sendMedia(String t0800Json, String t0200Json, byte[] bytes) {
         Gson gson = new Gson();
         T0800 t0800 = gson.fromJson(t0800Json, T0800.class);
-        debug("T0800: ", t0800.toString());
         T0200 t0200 = gson.fromJson(t0200Json, T0200.class);
-        debug("T0200: ", t0200.toString());
         List<Byte> data = new ArrayList<>();
         for (byte b : bytes) {
             data.add(b);

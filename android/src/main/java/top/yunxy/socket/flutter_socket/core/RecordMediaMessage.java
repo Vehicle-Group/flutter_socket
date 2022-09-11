@@ -76,7 +76,7 @@ public class RecordMediaMessage {
             List<Byte> subData = media.getData().subList(start, end);
             MsgContent msgContent;
             if (i == 0) {
-                msgContent = new T0801(curMediaId, 0, 0, 0, 1, media.getT0200(), DataTypeUtil.toBYTES(subData)).toContent();
+                msgContent = new T0801(curMediaId, 0, 0, 0, media.getT0800().getChannelId(), media.getT0200(), DataTypeUtil.toBYTES(subData)).toContent();
             } else {
                 msgContent = new MsgContent(0x0801, DataTypeUtil.toBYTES(subData));
             }

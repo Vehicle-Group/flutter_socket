@@ -98,10 +98,6 @@ public class Message implements Comparable<Message> {
 
     @Override
     public int compareTo(Message message) {
-        if (this.packageNo > message.getSerialNo())
-            return 1;
-        if (this.packageNo == message.getSerialNo())
-            return 0;
-        return -1;
+        return this.packageNo - message.packageNo;
     }
 }
