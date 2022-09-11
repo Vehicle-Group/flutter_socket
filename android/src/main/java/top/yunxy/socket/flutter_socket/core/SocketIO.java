@@ -218,7 +218,6 @@ public class SocketIO {
                                 lastSendInterval = System.currentTimeMillis();
                             } catch (InterruptedException e) {
                                 debug("多媒体超时未响应", e.toString());
-                                e.printStackTrace();
                                 errorHandle();
                                 mediaTimeLock.unlock();
                             } finally {
@@ -243,14 +242,12 @@ public class SocketIO {
                             lastSendInterval = System.currentTimeMillis();
                         } catch (InterruptedException e) {
                             debug("超时未响应", e.toString());
-                            e.printStackTrace();
                             errorHandle();
                             timeLock.unlock();
                         }
                     }
                 } catch (Exception e) {
                     debug("sendHandle", e.toString());
-                    e.printStackTrace();
                     errorHandle();
                 } finally {
                     try {
@@ -265,7 +262,7 @@ public class SocketIO {
     private void dataHandle() {
         new Thread(() -> {
             InputStream in = null;
-            byte[] buf = new byte[10240];
+            byte[] buf = new byte[512];
             try {
                 in = socket.getInputStream();
                 while (!exit && getConnectState()) {
@@ -277,20 +274,19 @@ public class SocketIO {
                     timeLock.unlock();
                     final List<byte[]> multiData = DataTypeUtil.toReverMulti(buf);
                     for (byte[] oData : multiData) {
-                        byte[] data = DataTypeUtil.toRever(oData);
-                        debug("origin hex", HexUtil.encode(oData), "length", data.length + "");
-                        if(data.length == 0) {
-                            continue;
+                        try {
+                            byte[] data = DataTypeUtil.toRever(oData);
+                            final MsgHead msgHead = new MsgHead(data);
+                            final int msgHeadLen = msgHead.toBytes().length;
+                            byte[] body = DataTypeUtil.toBYTES(data, msgHeadLen, msgHeadLen + msgHead.getMsgLen());
+                            dataHandleMessage(msgHead, body, HexUtil.encode(oData));
+                        } catch (Exception e) {
+                            debug("msgHead", e.toString());
                         }
-                        final MsgHead msgHead = new MsgHead(data);
-                        final int msgHeadLen = msgHead.toBytes().length;
-                        byte[] body = DataTypeUtil.toBYTES(data, msgHeadLen, msgHeadLen + msgHead.getMsgLen());
-                        dataHandleMessage(msgHead, body, HexUtil.encode(oData));
                     }
                 }
             } catch (Exception e) {
                 debug("dataHandle", e.toString());
-                e.printStackTrace();
                 errorHandle();
             } finally {
                 try {

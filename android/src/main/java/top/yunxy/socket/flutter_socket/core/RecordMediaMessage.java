@@ -99,6 +99,7 @@ public class RecordMediaMessage {
     }
 
     public synchronized List<Message> finds() {
+        lastSendInterval = System.currentTimeMillis();
         List<Message> data = new ArrayList<>();
         for (Integer key : curMediaMap.keySet()) {
             data.add(curMediaMap.get(key));
