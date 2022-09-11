@@ -271,7 +271,7 @@ public class SocketIO {
             try {
                 in = socket.getInputStream();
                 while (!exit && getConnectState()) {
-                    byte[] buf = new byte[10240];
+                    byte[] buf = new byte[2048];
                     int len = in.read(buf);
                     if (len == -1) {
                         continue;
@@ -283,7 +283,6 @@ public class SocketIO {
                         try {
                             byte[] data = DataTypeUtil.toRever(oData);
                             if (data.length == 0) {
-                                debug("rever data length 0");
                                 continue;
                             }
                             final MsgHead msgHead = new MsgHead(data);
@@ -385,12 +384,12 @@ public class SocketIO {
     }
 
     private void debug(String... args) {
-        String time = sdf.format(new Date());
-        StringBuilder sb = new StringBuilder(time + " " + code + " [" + type + "] ");
+        StringBuilder sb = new StringBuilder(code + " [" + type + "] ");
         for (String arg : args) {
             sb.append(arg + " ");
         }
-        System.out.println(sb.toString());
+        String time = sdf.format(new Date());
+        System.out.println(time + " " + sb);
 //        call("debug", sb.toString());
     }
 
