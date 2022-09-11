@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 
 import java.io.*;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import top.yunxy.socket.flutter_socket.jtt.*;
@@ -32,6 +33,7 @@ public class SocketIO {
     private final Handler handler;
     private RecordMessage recordMessage = new RecordMessage();
     private RecordMediaMessage recordMediaMessage = new RecordMediaMessage();
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public SocketIO(String ip, List<Integer> ports, String type, String code, boolean heartbeat, Event streamEvent) {
         this.ip = ip;
@@ -206,13 +208,13 @@ public class SocketIO {
                         if (recordMessage.empty() && recordMediaMessage.next(code, serialNo, total -> nextSerialNo(total))) {
                             try {
                                 debug("start send Media");
-                                mediaTimeLock.lock(20000);
+                                mediaTimeLock.lock(30000);
                                 if (!getConnectState()) {
                                     mediaTimeLock.unlock();
                                     continue;
                                 }
                                 List<Message> messages = recordMediaMessage.finds();
-                                if(messages.size() == 0) {
+                                if (messages.isEmpty()) {
                                     mediaTimeLock.unlock();
                                     continue;
                                 }
@@ -334,7 +336,7 @@ public class SocketIO {
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8800.toString(), hex);
                 resendMedia(t8800.getId(), t8800.getIds(), true);
                 if (t8800.getIds().isEmpty()) {
-                    debug("unlock media",  "ids:", t8800.getIds().size() + "");
+                    debug("unlock media", "ids:", t8800.getIds().size() + "");
                     mediaTimeLock.unlock();
                     sendAnswer(msgHead);
                 }
@@ -368,6 +370,9 @@ public class SocketIO {
     }
 
     private void sendAnswer(MsgHead msgHead) {
+        if (!getConnectState()) {
+            return;
+        }
         debug("sendAnswer", "socket connect: ", getConnectState() + "");
         try {
             final int serNo = nextSerialNo();
@@ -383,7 +388,8 @@ public class SocketIO {
     }
 
     private void debug(String... args) {
-        StringBuilder sb = new StringBuilder(code + " [" + type + "] ");
+        String time = sdf.format(new Date());
+        StringBuilder sb = new StringBuilder(time + " " + code + " [" + type + "] ");
         for (String arg : args) {
             sb.append(arg + " ");
         }
