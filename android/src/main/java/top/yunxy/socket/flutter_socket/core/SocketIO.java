@@ -321,6 +321,7 @@ public class SocketIO {
                 final T8800 t8800 = new T8800(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8800.toString(), hex);
                 if (t8800.getIds().isEmpty()) {
+                    sendAnswer(msgHead);
                     mediaTimeLock.unlock();
                 }
                 resendMedia(t8800.getId(), t8800.getIds(), true);
