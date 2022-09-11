@@ -43,9 +43,6 @@ public class RecordMediaMessage {
     }
 
     public synchronized boolean next(String code, int serNo, SerialNoEvent event) {
-        if (curMediaId != -1 && System.currentTimeMillis() < lastSendInterval + 30000) {
-            return false;
-        }
         if (curMediaId == -1) {
             if (queue.isEmpty()) {
                 return false;
