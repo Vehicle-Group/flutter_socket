@@ -6,11 +6,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import top.yunxy.socket.flutter_socket.jtt.MsgContent;
-import top.yunxy.socket.flutter_socket.jtt.T0800;
 import top.yunxy.socket.flutter_socket.jtt.T0801;
 import top.yunxy.socket.flutter_socket.util.DataTypeUtil;
 
@@ -26,6 +23,8 @@ public class RecordMediaMessage {
     private int curMediaId = -1;
 
     private Map<Integer, Message> curMediaMap = new HashMap<>();
+
+    private Map<Integer, Integer> mediaCountMap = new HashMap<>();
 
     private Long lastSendInterval = 0L;
 
@@ -100,6 +99,18 @@ public class RecordMediaMessage {
             return new ArrayList<>();
         }
         lastSendInterval = System.currentTimeMillis();
+        if (mediaCountMap.containsKey(curMediaId)) {
+            int cnt = (int) mediaCountMap.get(curMediaId);
+            if(cnt > 2) {
+                curSerialNo = -1;
+                curMediaId = -1;
+                curMediaMap.clear();
+                return new ArrayList<>();
+            }
+            mediaCountMap.put(curMediaId, cnt + 1);
+        } else {
+            mediaCountMap.put(curMediaId, 0);
+        }
         List<Message> data = new ArrayList<>();
         for (Integer key : curMediaMap.keySet()) {
             data.add(curMediaMap.get(key));

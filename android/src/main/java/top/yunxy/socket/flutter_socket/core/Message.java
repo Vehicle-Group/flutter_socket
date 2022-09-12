@@ -10,6 +10,7 @@ public class Message implements Comparable<Message> {
     private boolean divide;
     private int total;
     private int packageNo;
+    private boolean skip = false;
 
     public Message(int msgId, byte[] data, int serialNo) {
         this.msgId = msgId;
@@ -18,6 +19,16 @@ public class Message implements Comparable<Message> {
         this.divide = false;
         this.total = 1;
         this.packageNo = 0;
+    }
+
+    public Message(int msgId, byte[] data, int serialNo, boolean skip) {
+        this.msgId = msgId;
+        this.data = data;
+        this.serialNo = serialNo;
+        this.divide = false;
+        this.total = 1;
+        this.packageNo = 0;
+        this.skip = skip;
     }
 
     public Message(int msgId, byte[] data, int serialNo, boolean divide, int total, int packageNo) {
@@ -77,12 +88,17 @@ public class Message implements Comparable<Message> {
         this.packageNo = packageNo;
     }
 
+    public boolean isSkip() {
+        return skip;
+    }
+
     @Override
     public String toString() {
         if (!this.divide) {
             return "Message{" +
                     "msgId=" + MessageType.get(msgId).toString() +
                     ", serialNo=" + serialNo +
+                    ", skip=" + skip +
                     ", data=" + HexUtil.encode(data) +
                     '}';
         }
@@ -92,6 +108,7 @@ public class Message implements Comparable<Message> {
                 ", divide=" + true +
                 ", total=" + total +
                 ", packageNo=" + packageNo +
+                ", skip=" + skip +
                 ", data=" + HexUtil.encode(data) +
                 '}';
     }

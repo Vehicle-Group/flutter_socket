@@ -112,6 +112,7 @@ public class SocketIO {
     public synchronized void send(int msgId, String json) {
         MsgContent msgContent = null;
         Gson gson = new Gson();
+        boolean skip = false;
         switch (msgId) {
             case 0x0200:
                 T0200 t0200 = gson.fromJson(json, T0200.class);
@@ -124,6 +125,7 @@ public class SocketIO {
             case 0x0805:
                 T0805 t0805 = gson.fromJson(json, T0805.class);
                 msgContent = t0805.toContent();
+                skip = true;
                 break;
             default:
                 debug("unknown msg", MessageType.get(msgId).toString());
@@ -133,7 +135,7 @@ public class SocketIO {
         }
         final int serNo = nextSerialNo();
         byte[] data = DataTypeUtil.toWriteBytes(code, msgContent, serNo);
-        send(new Message(msgId, data, serNo));
+        send(new Message(msgId, data, serNo, skip));
     }
 
     public synchronized void sendMedia(String t0800Json, String t0200Json, byte[] bytes) {
@@ -251,6 +253,13 @@ public class SocketIO {
                                 continue;
                             }
                             Message message = recordMessage.find();
+                            if(message == null) {
+                                timeLock.unlock();
+                                continue;
+                            }
+                            if(message.isSkip()) {
+                                recordMessage.remove(message.getSerialNo());
+                            }
                             debug("<<<-", message.toString());
                             out.write(message.getData());
                             out.flush();

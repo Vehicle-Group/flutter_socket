@@ -1,13 +1,15 @@
 package top.yunxy.socket.flutter_socket.core;
 
+import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Map;
 
 public class RecordMessage {
     private LinkedList queue = new LinkedList<Message>();
 
     private Message curMessage = null;
+
+    private Map messageCountMap = new HashMap<Integer, Integer>();
 
     private Long lastSendInterval = 0L;
 
@@ -37,16 +39,32 @@ public class RecordMessage {
 
     public synchronized Message find() {
         lastSendInterval = System.currentTimeMillis();
+        if (messageCountMap.containsKey(curMessage.getMsgId())) {
+            int cnt = (int) messageCountMap.get(curMessage.getMsgId());
+            if(cnt > 2) {
+                curMessage = null;
+                return null;
+            }
+            messageCountMap.put(curMessage.getMsgId(), cnt + 1);
+        } else {
+            messageCountMap.put(curMessage.getMsgId(), 0);
+        }
         return curMessage;
     }
 
+    public void remove(int serNo) {
+        remove(serNo, null);
+    }
+
     public synchronized void remove(int serNo, Event event) {
-        if(curMessage == null) {
+        if (curMessage == null) {
             return;
         }
-        if(curMessage.getSerialNo() == serNo) {
+        if (curMessage.getSerialNo() == serNo) {
             curMessage = null;
-            event.call("success");
+            if(event != null) {
+                event.call("success");
+            }
         }
     }
 }
