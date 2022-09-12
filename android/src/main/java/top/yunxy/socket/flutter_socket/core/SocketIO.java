@@ -138,7 +138,8 @@ public class SocketIO {
         send(new Message(msgId, data, serNo, skip));
     }
 
-    public synchronized void sendMedia(String t0800Json, String t0200Json, byte[] bytes) {
+    public void sendMedia(String t0800Json, String t0200Json, byte[] bytes) {
+        debug("T0800: ", t0800Json, "T0200: " + t0200Json);
         Gson gson = new Gson();
         T0800 t0800 = gson.fromJson(t0800Json, T0800.class);
         T0200 t0200 = gson.fromJson(t0200Json, T0200.class);
@@ -294,7 +295,7 @@ public class SocketIO {
                     if (len == -1) {
                         continue;
                     }
-                    debug("recv origin hex", HexUtil.encode(buf).replaceAll("0*$", ""));
+//                    debug("recv origin hex", HexUtil.encode(buf).replaceAll("0*$", ""));
                     timeLock.unlock();
                     final List<byte[]> multiData = DataTypeUtil.toReverMulti(buf);
                     for (byte[] oData : multiData) {

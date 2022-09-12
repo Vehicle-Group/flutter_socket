@@ -85,6 +85,9 @@ public class SocketIOManage {
     public void send(String code, String socketType, int msgId, String data) {
         lock.lock();
         for (SocketIO socket : sockets) {
+            if (!socket.getConnectState()) {
+                continue;
+            }
             if (!code.equals("") && !code.equals(socket.code)) {
                 continue;
             }
@@ -99,7 +102,7 @@ public class SocketIOManage {
     public void sendMedia(String code, String socketType, String t0800, String t0200, byte[] data) {
         lock.lock();
         for (SocketIO socket : sockets) {
-            if (socket == null) {
+            if (!socket.getConnectState()) {
                 continue;
             }
             if (!code.equals("") && !code.equals(socket.code)) {
