@@ -25,6 +25,7 @@ public class SocketIO {
     private boolean authState = false;
     private boolean exit = false;
     private int serialNo = 0;
+    private int currentIndex = 0;
     private long connectInterval = 0;
     private long lastSendInterval = 0;
     private TimeLock timeLock = new TimeLock();
@@ -43,6 +44,10 @@ public class SocketIO {
         this.heartbeat = heartbeat;
         this.streamEvent = streamEvent;
         this.handler = new Handler(Looper.getMainLooper());
+        this.serialNo = 0;
+        this.currentIndex = 0;
+        this.connectInterval = 0;
+        this.lastSendInterval = 0;
         this.connect();
         this.sendHandle();
         this.runHeartbeat();
@@ -173,6 +178,10 @@ public class SocketIO {
 
     public boolean getConnectState() {
         return socket != null && socket.isConnected();
+    }
+
+    public int getCurrentIndex() {
+        return currentIndex;
     }
 
     private int nextSerialNo() {
@@ -312,7 +321,13 @@ public class SocketIO {
             case 0x8001:
                 final T8001 t8001 = new T8001(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8001.toString(), hex);
-                recordMessage.remove(t8001.getAnswerSerialNo());
+                recordMessage.remove(t8001.getAnswerSerialNo(), element -> {
+                    if(t8001.getAnswerId() == 0x0002) {
+                        return;
+                    }
+                    currentIndex++;
+                    call("currentIndex", currentIndex, serialNo);
+                });
                 if (t8001.getAnswerId() == 0x0102 && t8001.getResult() == 0) {
                     authState = true;
                     call("auth", true);

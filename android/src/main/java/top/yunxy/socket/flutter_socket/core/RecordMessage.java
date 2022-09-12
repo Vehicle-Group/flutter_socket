@@ -40,12 +40,13 @@ public class RecordMessage {
         return curMessage;
     }
 
-    public synchronized void remove(int serNo) {
+    public synchronized void remove(int serNo, Event event) {
         if(curMessage == null) {
             return;
         }
         if(curMessage.getSerialNo() == serNo) {
             curMessage = null;
+            event.call("success");
         }
     }
 }

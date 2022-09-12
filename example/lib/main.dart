@@ -29,6 +29,12 @@ class _MyAppState extends State<MyApp> {
       Map<String, dynamic> data = json.decode(event) as Map<String, dynamic>;
       switch(data['type']) {
         case 'connect':
+          final bool state = data['content'] as bool;
+          print('connect: $state');
+          break;
+        case 'currentIndex':
+          final int currentIndex = data['content'] as int;
+          print('currentIndex: $currentIndex');
           break;
         case 'auth':
           break;
