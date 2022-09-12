@@ -9,7 +9,7 @@ public class RecordMessage {
 
     private Message curMessage = null;
 
-    private Map messageCountMap = new HashMap<Integer, Integer>();
+    private Map<Integer, Integer> messageCountMap = new HashMap<>();
 
     private Long lastSendInterval = 0L;
 
@@ -39,16 +39,17 @@ public class RecordMessage {
 
     public synchronized Message find() {
         lastSendInterval = System.currentTimeMillis();
-//        if (messageCountMap.containsKey(curMessage.getMsgId())) {
-//            int cnt = (int) messageCountMap.get(curMessage.getMsgId());
-//            if(cnt > 2) {
-//                curMessage = null;
-//                return null;
-//            }
-//            messageCountMap.put(curMessage.getMsgId(), cnt + 1);
-//        } else {
-//            messageCountMap.put(curMessage.getMsgId(), 0);
-//        }
+        if (messageCountMap.containsKey(curMessage.getSerialNo())) {
+            int cnt = messageCountMap.get(curMessage.getSerialNo());
+            if(cnt > 2) {
+                messageCountMap.remove(curMessage.getSerialNo());
+                curMessage = null;
+                return null;
+            }
+            messageCountMap.put(curMessage.getSerialNo(), cnt + 1);
+        } else {
+            messageCountMap.put(curMessage.getSerialNo(), 0);
+        }
         return curMessage;
     }
 
@@ -61,6 +62,7 @@ public class RecordMessage {
             return;
         }
         if (curMessage.getSerialNo() == serNo) {
+            messageCountMap.remove(curMessage.getSerialNo());
             curMessage = null;
             if(event != null) {
                 event.call("success");

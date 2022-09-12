@@ -16,8 +16,6 @@ public class RecordMediaMessage {
 
     private LinkedList queue = new LinkedList<MediaMessage>();
 
-    private byte[] curData;
-
     private int curSerialNo = -1;
 
     private int curMediaId = -1;
@@ -25,8 +23,6 @@ public class RecordMediaMessage {
     private Map<Integer, Message> curMediaMap = new HashMap<>();
 
     private Map<Integer, Integer> mediaCountMap = new HashMap<>();
-
-    private Long lastSendInterval = 0L;
 
     private Message t0800Message;
 
@@ -86,31 +82,25 @@ public class RecordMediaMessage {
             Message message = new Message(0x0801, realData, (serNo + i) % 65535, true, total, i + 1);
             curMediaMap.put(i + 1, message);
         }
-        curData = DataTypeUtil.toBYTES(list);
-    }
-
-    public synchronized byte[] find() {
-        lastSendInterval = System.currentTimeMillis();
-        return curData;
     }
 
     public synchronized List<Message> finds() {
         if (curMediaId == -1) {
             return new ArrayList<>();
         }
-        lastSendInterval = System.currentTimeMillis();
-//        if (mediaCountMap.containsKey(curMediaId)) {
-//            int cnt = (int) mediaCountMap.get(curMediaId);
-//            if(cnt > 2) {
-//                curSerialNo = -1;
-//                curMediaId = -1;
-//                curMediaMap.clear();
-//                return new ArrayList<>();
-//            }
-//            mediaCountMap.put(curMediaId, cnt + 1);
-//        } else {
-//            mediaCountMap.put(curMediaId, 0);
-//        }
+        if (mediaCountMap.containsKey(curMediaId)) {
+            int cnt = mediaCountMap.get(curMediaId);
+            if(cnt > 2) {
+                mediaCountMap.remove(curMediaId);
+                curSerialNo = -1;
+                curMediaId = -1;
+                curMediaMap.clear();
+                return new ArrayList<>();
+            }
+            mediaCountMap.put(curMediaId, cnt + 1);
+        } else {
+            mediaCountMap.put(curMediaId, 0);
+        }
         List<Message> data = new ArrayList<>();
         for (Integer key : curMediaMap.keySet()) {
             data.add(curMediaMap.get(key));
@@ -128,6 +118,7 @@ public class RecordMediaMessage {
             return new ArrayList<>();
         }
         if (ids.isEmpty()) {
+            mediaCountMap.remove(curMediaId);
             curSerialNo = -1;
             curMediaId = -1;
             curMediaMap.clear();
