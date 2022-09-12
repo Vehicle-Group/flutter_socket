@@ -99,18 +99,18 @@ public class RecordMediaMessage {
             return new ArrayList<>();
         }
         lastSendInterval = System.currentTimeMillis();
-        if (mediaCountMap.containsKey(curMediaId)) {
-            int cnt = (int) mediaCountMap.get(curMediaId);
-            if(cnt > 2) {
-                curSerialNo = -1;
-                curMediaId = -1;
-                curMediaMap.clear();
-                return new ArrayList<>();
-            }
-            mediaCountMap.put(curMediaId, cnt + 1);
-        } else {
-            mediaCountMap.put(curMediaId, 0);
-        }
+//        if (mediaCountMap.containsKey(curMediaId)) {
+//            int cnt = (int) mediaCountMap.get(curMediaId);
+//            if(cnt > 2) {
+//                curSerialNo = -1;
+//                curMediaId = -1;
+//                curMediaMap.clear();
+//                return new ArrayList<>();
+//            }
+//            mediaCountMap.put(curMediaId, cnt + 1);
+//        } else {
+//            mediaCountMap.put(curMediaId, 0);
+//        }
         List<Message> data = new ArrayList<>();
         for (Integer key : curMediaMap.keySet()) {
             data.add(curMediaMap.get(key));

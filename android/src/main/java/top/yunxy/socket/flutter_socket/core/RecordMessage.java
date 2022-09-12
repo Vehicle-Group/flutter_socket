@@ -39,16 +39,16 @@ public class RecordMessage {
 
     public synchronized Message find() {
         lastSendInterval = System.currentTimeMillis();
-        if (messageCountMap.containsKey(curMessage.getMsgId())) {
-            int cnt = (int) messageCountMap.get(curMessage.getMsgId());
-            if(cnt > 2) {
-                curMessage = null;
-                return null;
-            }
-            messageCountMap.put(curMessage.getMsgId(), cnt + 1);
-        } else {
-            messageCountMap.put(curMessage.getMsgId(), 0);
-        }
+//        if (messageCountMap.containsKey(curMessage.getMsgId())) {
+//            int cnt = (int) messageCountMap.get(curMessage.getMsgId());
+//            if(cnt > 2) {
+//                curMessage = null;
+//                return null;
+//            }
+//            messageCountMap.put(curMessage.getMsgId(), cnt + 1);
+//        } else {
+//            messageCountMap.put(curMessage.getMsgId(), 0);
+//        }
         return curMessage;
     }
 
