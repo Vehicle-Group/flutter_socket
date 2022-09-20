@@ -17,12 +17,13 @@ class FlutterSocket {
     return _eventChannel.receiveBroadcastStream();
   }
 
-  static Future<void> connect(List<String> codes, String ipInfoList, bool video, bool heartbeat) async {
+  static Future<void> connect(List<String> codes, String ipInfoList, bool video, bool heartbeat, {bool debug = false}) async {
     await _channel.invokeMethod('connect', {
       'codes': codes,
       'ipInfoList': ipInfoList,
       'video': video,
-      'heartbeat': heartbeat
+      'heartbeat': heartbeat,
+      'showLog': debug
     });
     return Future.value();
   }

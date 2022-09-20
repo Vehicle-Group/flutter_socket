@@ -15,23 +15,17 @@ public class SocketIOManage {
     private List<IPInfo> ipInfoList;
     private boolean video;
     private boolean heartbeat;
+    private boolean showLog;
     private List<SocketIO> sockets;
     private Event streamEvent;
     private Lock lock = new ReentrantLock();
 
-    public SocketIOManage(List<String> codes, List<IPInfo> ipInfoList, boolean video, boolean heartbeat) {
+    public SocketIOManage(List<String> codes, List<IPInfo> ipInfoList, boolean video, boolean heartbeat, boolean showLog, Event streamEvent) {
         this.codes = codes;
         this.ipInfoList = ipInfoList;
         this.video = video;
         this.heartbeat = heartbeat;
-        init();
-    }
-
-    public SocketIOManage(List<String> codes, List<IPInfo> ipInfoList, boolean video, boolean heartbeat, Event streamEvent) {
-        this.codes = codes;
-        this.ipInfoList = ipInfoList;
-        this.video = video;
-        this.heartbeat = heartbeat;
+        this.showLog = showLog;
         this.streamEvent = streamEvent;
         init();
     }
@@ -43,7 +37,7 @@ public class SocketIOManage {
                 if (ipInfo.type.equals("video") && !video) {
                     continue;
                 }
-                SocketIO socketIO = new SocketIO(ipInfo.ip, ipInfo.ports, ipInfo.type, code, heartbeat, element -> {
+                SocketIO socketIO = new SocketIO(ipInfo.ip, ipInfo.ports, ipInfo.type, code, heartbeat, showLog, element -> {
                     lock.lock();
                     if (streamEvent == null) {
                         lock.unlock();

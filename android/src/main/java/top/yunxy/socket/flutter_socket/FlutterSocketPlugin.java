@@ -68,7 +68,8 @@ public class FlutterSocketPlugin implements FlutterPlugin, MethodCallHandler {
             }
             boolean video = call.argument("video");
             boolean heartbeat = call.argument("heartbeat");
-            connect(codes, ipInfoList, video, heartbeat);
+            boolean showLog = call.argument("showLog");
+            connect(codes, ipInfoList, video, heartbeat, showLog);
             result.success(null);
         } else if (call.method.equals("close")) {
             close();
@@ -100,12 +101,12 @@ public class FlutterSocketPlugin implements FlutterPlugin, MethodCallHandler {
         socketIOManage = null;
     }
 
-    public synchronized void connect(List<String> codes, List<IPInfo> ipInfoList, boolean video, boolean heartbeat) {
+    public synchronized void connect(List<String> codes, List<IPInfo> ipInfoList, boolean video, boolean heartbeat, boolean showLog) {
         if (socketIOManage != null) {
             socketIOManage.close();
             socketIOManage = null;
         }
-        socketIOManage = new SocketIOManage(codes, ipInfoList, video, heartbeat, data -> {
+        socketIOManage = new SocketIOManage(codes, ipInfoList, video, heartbeat, showLog, data -> {
             sendFlutter(data);
         });
     }

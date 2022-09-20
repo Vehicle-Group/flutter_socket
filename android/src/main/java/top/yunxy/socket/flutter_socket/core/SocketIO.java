@@ -21,6 +21,7 @@ public class SocketIO {
     String type;
     String code;
     boolean heartbeat;
+    boolean showLog;
     private Socket socket;
     private boolean authState = false;
     private boolean exit = false;
@@ -36,12 +37,13 @@ public class SocketIO {
     private RecordMediaMessage recordMediaMessage = new RecordMediaMessage();
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public SocketIO(String ip, List<Integer> ports, String type, String code, boolean heartbeat, Event streamEvent) {
+    public SocketIO(String ip, List<Integer> ports, String type, String code, boolean heartbeat, boolean showLog, Event streamEvent) {
         this.ip = ip;
         this.ports = ports;
         this.type = type;
         this.code = code;
         this.heartbeat = heartbeat;
+        this.showLog = showLog;
         this.streamEvent = streamEvent;
         this.handler = new Handler(Looper.getMainLooper());
         this.serialNo = 0;
@@ -198,7 +200,7 @@ public class SocketIO {
 
     private void sendHandle() {
         new Thread(() -> {
-            int wait = 500;
+            int wait = 250;
             OutputStream out = null;
             while (!exit) {
                 if (!getConnectState()) {
@@ -253,11 +255,11 @@ public class SocketIO {
                                 continue;
                             }
                             Message message = recordMessage.find();
-                            if(message == null) {
+                            if (message == null) {
                                 timeLock.unlock();
                                 continue;
                             }
-                            if(message.isSkip()) {
+                            if (message.isSkip()) {
                                 recordMessage.remove(message.getSerialNo());
                             }
                             debug("<<<-", message.toString());
@@ -331,7 +333,7 @@ public class SocketIO {
                 final T8001 t8001 = new T8001(body);
                 debug("->>>", MessageType.get(msgHead.getMsgId()).toString(), t8001.toString(), hex);
                 recordMessage.remove(t8001.getAnswerSerialNo(), element -> {
-                    if(t8001.getAnswerId() == 0x0002) {
+                    if (t8001.getAnswerId() == 0x0002) {
                         return;
                     }
                     currentIndex++;
@@ -406,12 +408,13 @@ public class SocketIO {
     }
 
     private void debug(String... args) {
+        if (!showLog) {
+            return;
+        }
         StringBuilder sb = new StringBuilder(code + " [" + type + "] ");
         for (String arg : args) {
             sb.append(arg + " ");
         }
-//        String time = sdf.format(new Date());
-//        System.out.println(time + " " + sb);
         call("debug", sb.toString());
     }
 
